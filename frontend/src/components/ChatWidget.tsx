@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, Suspense } from "react";
-import { sendMessage, type ChatResponse, saveApiKeys } from "../lib/api";
-import { Send, Eye, Settings } from "lucide-react";
+import { sendMessage, type ChatResponse, saveApiKeys, uploadDocument } from "../lib/api";
+import { Send, Eye, Settings, Paperclip } from "lucide-react";
 import ThreeDViewer from "./ThreeDViewer";
 import SettingsModal from "./SettingsModal";
 import "./ChatWidget.css";
@@ -29,6 +29,9 @@ export default function ChatWidget({ onExpandScene }: ChatWidgetProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [enable3D, setEnable3D] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -48,7 +51,7 @@ export default function ChatWidget({ onExpandScene }: ChatWidgetProps) {
     setIsLoading(true);
 
     try {
-      const response: ChatResponse = await sendMessage(userMessage, sessionId);
+      const response: ChatResponse = await sendMessage(userMessage, sessionId, enable3D);
 
       setMessages((prev) => [
         ...prev,
@@ -91,6 +94,31 @@ export default function ChatWidget({ onExpandScene }: ChatWidgetProps) {
       }
     } catch (error) {
       throw error instanceof Error ? error : new Error('Failed to save API keys');
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const response = await uploadDocument(file, sessionId);
+      if (response.success) {
+        setMessages((prev) => [...prev, { 
+          sender: "bot", 
+          text: `📎 Document "${file.name}" uploaded successfully. I can now answer questions about its content.` 
+        }]);
+      }
+    } catch (error: any) {
+      console.error(error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -143,13 +171,26 @@ export default function ChatWidget({ onExpandScene }: ChatWidgetProps) {
         </div>
       </div>
 
+      {/* Sub-header with 3D Toggle */}
+      <div className="chat-subheader">
+        <label className="toggle-container">
+          <input 
+            type="checkbox" 
+            checked={enable3D} 
+            onChange={(e) => setEnable3D(e.target.checked)} 
+          />
+          <span className="toggle-slider"></span>
+          <span className="toggle-label">{enable3D ? "3D Generation Enabled" : "3D Generation Disabled"}</span>
+        </label>
+      </div>
+
       {/* Messages Container */}
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="welcome-message">
-            <div className="welcome-icon">👋</div>
-            <h3>Welcome!</h3>
-            <p>I'm your AI assistant. How can I help you today?</p>
+            <div className="welcome-icon">🏢</div>
+            <h3>GoGenix Enterprise AI</h3>
+            <p>Welcome to your corporate intelligence assistant. Upload documents or ask questions to begin.</p>
           </div>
         )}
 
@@ -158,7 +199,7 @@ export default function ChatWidget({ onExpandScene }: ChatWidgetProps) {
             <div className={`message ${msg.sender}`}>
               <div className="message-content">{msg.text}</div>
               
-              {msg.scene && (
+              {msg.scene && msg.scene !== 'none' && (
                 <div style={{ marginTop: "16px" }}>
                   {/* Mini 3D Viewer Preview */}
                   <div style={{
@@ -266,17 +307,36 @@ export default function ChatWidget({ onExpandScene }: ChatWidgetProps) {
       {/* Input Area */}
       <div className="chat-input-area">
         <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          accept=".pdf"
+          style={{ display: 'none' }}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="upload-btn"
+          disabled={isLoading || isUploading}
+          title="Upload Company PDF"
+        >
+          {isUploading ? (
+            <div className="upload-spinner"></div>
+          ) : (
+            <Paperclip className="upload-icon" />
+          )}
+        </button>
+        <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder="Type your message..."
+          placeholder={isUploading ? "Uploading document..." : "Type your message..."}
           className="chat-input"
-          disabled={isLoading}
+          disabled={isLoading || isUploading}
         />
         <button
           onClick={handleSend}
-          disabled={isLoading || !input.trim()}
+          disabled={isLoading || isUploading || !input.trim()}
           className="send-button"
           aria-label="Send message"
         >

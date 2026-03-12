@@ -28,20 +28,19 @@ FRONTEND_MODELS_DIR = os.path.abspath(
     os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "models")
 )
 
-def _create_simple_cube() -> np.ndarray:
-    """Create vertices for a simple cube."""
-    vertices = [
-        # Front face
-        [-1, -1,  1],
-        [ 1, -1,  1],
-        [ 1,  1,  1],
-        [-1,  1,  1],
-        # Back face
-        [-1, -1, -1],
-        [ 1, -1, -1],
-        [ 1,  1, -1],
-        [-1,  1, -1],
-    ]
+def _create_simple_sphere() -> np.ndarray:
+    """Create vertices for a simple sphere."""
+    vertices = []
+    # Create a simple low-poly sphere
+    segments = 16
+    for i in range(segments + 1):
+        phi = np.pi * i / segments
+        for j in range(segments + 1):
+            theta = 2 * np.pi * j / segments
+            x = np.sin(phi) * np.cos(theta)
+            y = np.cos(phi)
+            z = np.sin(phi) * np.sin(theta)
+            vertices.append([x, y, z])
     return np.array(vertices, dtype=np.float32)
 
 def _create_glb_from_vertices(vertices: np.ndarray, filepath: str) -> bool:
@@ -50,7 +49,7 @@ def _create_glb_from_vertices(vertices: np.ndarray, filepath: str) -> bool:
         vertices = np.asarray(vertices, dtype=np.float32)
         
         if len(vertices) < 3:
-            vertices = _create_simple_cube()
+            vertices = _create_simple_sphere()
         
         vertex_count = len(vertices)
         indices = list(range(vertex_count))
@@ -233,8 +232,8 @@ async def _fallback_generate_model(prompt: str) -> str:
         filename = f"model_{uuid.uuid4().hex[:8]}.glb"
         destination = os.path.join(FRONTEND_MODELS_DIR, filename)
         
-        # Generate a simple cube
-        vertices = _create_simple_cube()
+        # Generate a simple sphere
+        vertices = _create_simple_sphere()
         
         if _create_glb_from_vertices(vertices, destination):
             duration = time.time() - start_time

@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from app.config import settings
 from app.orchestrator import handle_turn
+from app.services.document_service import extract_text_from_pdf, store_session_context
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 import os
 
 # Configure logging
@@ -34,6 +36,7 @@ class ChatRequest(BaseModel):
     session_id: str
     user_id: str
     message: str
+    enable_3d: bool = True
     channel: str = "web"
 
 @app.get("/")
@@ -64,6 +67,30 @@ async def save_api_keys(req: ApiKeyRequest):
     """
     logger.info(f"Saving API keys for user: {req.user_id}")
     return {"success": True, "message": "API keys saved successfully (mock)"}
+
+@app.post("/upload-document")
+async def upload_document(
+    session_id: str = Form(...),
+    file: UploadFile = File(...)
+):
+    """
+    Endpoint to upload a PDF document and extract text for context.
+    """
+    if not file.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    
+    try:
+        content = await file.read()
+        text = extract_text_from_pdf(content)
+        
+        if not text:
+            raise HTTPException(status_code=400, detail="Could not extract text from PDF.")
+        
+        store_session_context(session_id, text)
+        return {"success": True, "message": f"Document '{file.filename}' processed and added to context."}
+    except Exception as e:
+        logger.error(f"Error processing document: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

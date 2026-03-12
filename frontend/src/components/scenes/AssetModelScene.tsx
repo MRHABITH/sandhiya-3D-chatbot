@@ -53,8 +53,8 @@ export default function AssetModelScene({ assetId }: AssetModelSceneProps) {
         <Model url={modelUrl} />
       ) : (
         <mesh>
-          <boxGeometry args={[2, 2, 2]} />
-          <meshStandardMaterial color="red" wireframe />
+          <sphereGeometry args={[1, 32, 32]} />
+          <meshStandardMaterial color="#2563eb" emissive="#2563eb" emissiveIntensity={0.5} transparent opacity={0.3} />
         </mesh>
       )}
     </group>

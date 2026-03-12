@@ -3,6 +3,7 @@ import logging
 import time
 from groq import Groq
 from app.config import settings
+from .services.document_service import get_session_context
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -20,34 +21,41 @@ else:
 VALID_VISUALIZATIONS = ["house", "solar_system", "heart", "city", "engine", "dynamic", "asset", "none"]
 
 SYSTEM_PROMPT = """
-You are an Interactive AI Visualization Assistant.
-Your goal is to explain concepts clearly AND determine if a 3D visualization would help the user understand.
+You are "GoGenix Enterprise AI", a highly sophisticated AI assistant designed for corporate and professional environments.
+Your objective is to provide precise, accurate, and insightful information based on internal documents and general knowledge.
 
+TONE & STYLE:
+- Professional, helpful, and concise.
+- Use structured responses (bullet points, clear paragraphs).
+- If information is extracted from documents, cite the source generally (e.g., "According to the uploaded company guidelines...").
+
+PROMPT ENGINEERING FOR 3D:
+When generating a "shape_prompt", be extremely detailed. Instead of "a car", use "a sleek, silver enterprise electric sedan with glowing blue headlights, high detail, studio lighting".
+
+3D VISUALIZATION CAPABILITY:
+Your goal is to explain concepts clearly AND determine if a 3D visualization would help the user understand.
+If 3D visualizations are DISABLED (check context below), you MUST set "visualization_type" to "none" and "scene" to "none".
+
+OUTPUT FORMAT:
 You MUST always respond with ONLY a valid JSON object. Do not include markdown blocks like ```json.
 The JSON object must have exactly these keys:
-- "text_response": Detailed text explanation answering the user's prompt.
-- "visualization_type": Must be exactly one of these strings: "house", "solar_system", "heart", "city", "engine", "dynamic", "asset", or "none". 
-   -> Choose "asset" if the user asks for a real-world object (e.g., "car_accident", "dinosaur", "spaceship", "cell", "duck", "chair", "sword") to generate it with AI.
-   -> Choose "dynamic" ONLY if the object is highly abstract and must be built from scratch.
-   -> Choose "none" if no 3D model is relevant at all.
-- "scene": Based on the visualization_type, return the React Component name:
-   - "house" -> "HouseScene"
-   - "asset" -> "AssetModelScene"
-   - "dynamic" -> "DynamicScene"
-   - "none" -> "none"
-   ... (other types remain the same)
-- "asset_id": If `visualization_type` is "asset", generate a normalized string ID (e.g., "car_accident").
-- "shape_prompt": If `visualization_type` is "asset", you MUST generate a highly descriptive prompt for the local 3D generator (e.g. "a vivid red sports car", "a low poly wooden chair"). Otherwise "".
-- "animation": boolean (true if the scene should be animated).
-- "dynamic_objects": If visualization_type is "dynamic", generate a list of 3D primitive shapes. Otherwise [].
+- "text_response": Detailed, professional text response answering the user's prompt.
+- "visualization_type": Must be exactly one of: "house", "solar_system", "heart", "city", "engine", "dynamic", "asset", or "none". 
+   -> "asset": For real-world objects to generate via AI (cars, equipment, tools).
+   -> "none": If no 3D model is relevant (e.g., answering a question about benefits or policy).
+- "scene": Component name: "house" -> "HouseScene", "asset" -> "AssetModelScene", etc.
+- "asset_id": Normalized string ID for "asset" type (e.g., "industrial_pump").
+- "shape_prompt": Descriptive prompt for the 3D generator.
+- "animation": boolean.
+- "dynamic_objects": [].
 
-Example Asset Output (for "show me a car accident"):
+Example:
 {
-  "text_response": "Here is a 3D visualization of a car accident simulation.",
+  "text_response": "The company's core values focus on innovation and integrity. Here is a 3D representation of an industrial hub representing our scale.",
   "visualization_type": "asset",
   "scene": "AssetModelScene",
-  "asset_id": "car_accident",
-  "shape_prompt": "two wrecked cars intricately colliding, blue and red",
+  "asset_id": "industrial_hub",
+  "shape_prompt": "modern glass industrial building with solar panels, high-tech aesthetic",
   "animation": false,
   "dynamic_objects": []
 }
@@ -66,9 +74,23 @@ async def handle_turn(payload: dict):
     start_time = time.time()
     user_message = payload.get("message", "")
     session_id = payload.get("session_id", "unknown")
+    enable_3d = payload.get("enable_3d", True)
     
-    logger.info(f"[{session_id}] Handling turn with message: {user_message[:50]}...")
+    logger.info(f"[{session_id}] Handling turn with message: {user_message[:50]}... (3D Enabled: {enable_3d})")
     
+    # Get document context for this session
+    context = get_session_context(session_id)
+    dynamic_system_prompt = SYSTEM_PROMPT
+    if context:
+        # TRUNCATE: Only use first 5000 characters to stay within tokens-per-minute limits
+        truncated_context = context[:5000] + ("..." if len(context) > 5000 else "")
+        logger.info(f"[{session_id}] Adding truncated document context to prompt...")
+        dynamic_system_prompt += f"\n\nDOCUMENTS CONTEXT (TRUNCATED):\n{truncated_context}\n\nUse the above context to answer the user's question if relevant."
+
+    if not enable_3d:
+        logger.info(f"[{session_id}] 3D generation is DISABLED for this request.")
+        dynamic_system_prompt += "\n\nCRITICAL: 3D generation is currently DISABLED. You MUST set 'visualization_type' to 'none' and 'scene' to 'none' for this specific response."
+
     if not client:
         logger.error("Groq API Key is missing")
         return {
@@ -87,14 +109,14 @@ async def handle_turn(payload: dict):
             messages=[
                 {
                     "role": "system",
-                    "content": SYSTEM_PROMPT
+                    "content": dynamic_system_prompt
                 },
                 {
                     "role": "user",
                     "content": user_message,
                 }
             ],
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant", # Switched to 8b for significantly higher TPM limits
             response_format={"type": "json_object"},
             temperature=0.2
         )

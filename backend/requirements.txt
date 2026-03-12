@@ -10,3 +10,5 @@ groq>=0.4.0
 tripo3d>=0.1.0
 aiohttp>=3.8.0
 numpy>=1.24.0
+pypdf>=4.0.0
+python-multipart>=0.0.9

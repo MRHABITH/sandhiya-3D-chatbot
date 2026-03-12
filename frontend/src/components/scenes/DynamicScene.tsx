@@ -48,7 +48,7 @@ export default function DynamicScene({ dynamicObjects = [] }: DynamicSceneProps)
             {obj.type === 'cylinder' && <cylinderGeometry args={[1, 1, 2, 32]} />}
             
             {/* Fallback Geometry if LLM hallucinates a type */}
-            {!['box', 'sphere', 'cylinder'].includes(obj.type) && <boxGeometry args={[1, 1, 1]} />}
+            {!['box', 'sphere', 'cylinder'].includes(obj.type) && <sphereGeometry args={[1, 32, 32]} />}
 
             <meshPhysicalMaterial 
                color={obj.color || 'gray'} 
@@ -61,11 +61,11 @@ export default function DynamicScene({ dynamicObjects = [] }: DynamicSceneProps)
         )
       })}
 
-      {/* If LLM returns dynamic but no objects, show a fallback message or shape */}
+      {/* If LLM returns dynamic but no objects, show a fallback sphere */}
       {dynamicObjects.length === 0 && (
          <mesh castShadow>
-           <octahedronGeometry args={[1.5, 0]} />
-           <meshStandardMaterial color="purple" wireframe />
+           <sphereGeometry args={[1.5, 32, 32]} />
+           <meshStandardMaterial color="#2563eb" emissive="#2563eb" emissiveIntensity={0.5} transparent opacity={0.3} />
          </mesh>
       )}
     </group>

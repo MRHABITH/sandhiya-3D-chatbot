@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Box, Text } from '@react-three/drei'
+import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 
 interface PlaceholderSceneProps {
@@ -21,22 +21,27 @@ export default function PlaceholderScene({ isIdle = false }: PlaceholderScenePro
 
   return (
     <group>
-      <Box ref={meshRef} args={[3, 3, 3]} castShadow receiveShadow>
+      <mesh ref={meshRef} position={[0, 0, 0]}>
+        <sphereGeometry args={[1.5, 32, 32]} />
         <meshStandardMaterial 
-          color={isIdle ? "#64748b" : "#6366f1"} 
-          wireframe={isIdle} 
-          roughness={0.2}
-          metalness={0.8}
+          color={isIdle ? "#cbd5e1" : "#2563eb"} 
+          emissive={isIdle ? "#000000" : "#2563eb"}
+          emissiveIntensity={0.5}
+          transparent={true}
+          opacity={0.6}
+          roughness={0}
+          metalness={1}
         />
-      </Box>
+      </mesh>
       <Text
-        position={[0, -3, 0]}
-        fontSize={0.5}
-        color="white"
+        position={[0, -2.5, 0]}
+        fontSize={0.4}
+        color={isIdle ? "#64748b" : "#2563eb"}
         anchorX="center"
         anchorY="middle"
+        font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKGGKm_O7pMGRMjcD68W4.woff"
       >
-        {isIdle ? "Waiting for Prompt..." : "Loading Scene..."}
+        {isIdle ? "Assistant Ready" : "Building 3D Experience..."}
       </Text>
     </group>
   )

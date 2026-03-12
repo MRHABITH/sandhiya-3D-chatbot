@@ -23,11 +23,10 @@ export interface ApiKeysResponse {
     message: string;
 }
 
-// Use environment variable for production, fallback to your deployed Vercel backend URL
 // Use environment variable for production, fallback to local development URL
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
-export async function sendMessage(message: string, sessionId: string, userId: string = 'user-1'): Promise<ChatResponse> {
+export async function sendMessage(message: string, sessionId: string, enable3d: boolean = true, userId: string = 'user-1'): Promise<ChatResponse> {
     console.log(`Attempting to fetch: ${API_BASE_URL}/chat`);
     const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
@@ -40,6 +39,7 @@ export async function sendMessage(message: string, sessionId: string, userId: st
             session_id: sessionId,
             user_id: userId,
             message: message,
+            enable_3d: enable3d,
         }),
     });
 
@@ -70,6 +70,27 @@ export async function saveApiKeys(groqApiKey: string, tripoApiKey: string, userI
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to save API keys (${response.status}): ${errorText || response.statusText}`);
+    }
+
+    return response.json();
+}
+
+export async function uploadDocument(file: File, sessionId: string): Promise<{ success: boolean; message: string }> {
+    console.log(`Attempting to upload document to: ${API_BASE_URL}/upload-document`);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('session_id', sessionId);
+
+    const response = await fetch(`${API_BASE_URL}/upload-document`, {
+        method: 'POST',
+        mode: 'cors',
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload Failed (${response.status}): ${errorText || response.statusText}`);
     }
 
     return response.json();
