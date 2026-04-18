@@ -4,7 +4,7 @@ import { X, Check, AlertCircle } from 'lucide-react';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (groqKey: string, tripoKey: string) => Promise<void>;
+  onSave: (groqKey: string, stabilityKey: string) => Promise<void>;
 }
 
 export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
@@ -12,8 +12,8 @@ export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModal
     return localStorage.getItem('groq_api_key') || '';
   });
 
-  const [tripoApiKey, setTripoApiKey] = useState(() => {
-    return localStorage.getItem('tripo_api_key') || '';
+  const [stabilityApiKey, setStabilityApiKey] = useState(() => {
+    return localStorage.getItem('stability_api_key') || '';
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -31,11 +31,11 @@ export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModal
     setErrorMessage('');
 
     try {
-      await onSave(groqApiKey, tripoApiKey);
+      await onSave(groqApiKey, stabilityApiKey);
 
       // Store in localStorage for reference
       localStorage.setItem('groq_api_key', groqApiKey);
-      localStorage.setItem('tripo_api_key', tripoApiKey);
+      localStorage.setItem('stability_api_key', stabilityApiKey);
 
       setSaveStatus('success');
       setErrorMessage('');
@@ -176,7 +176,7 @@ export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModal
             </p>
           </div>
 
-          {/* Tripo AI API Key */}
+          {/* Stability AI API Key */}
           <div style={{ marginBottom: '20px' }}>
             <label
               style={{
@@ -187,14 +187,14 @@ export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModal
                 marginBottom: '8px',
               }}
             >
-              Tripo AI API Key
+              Stability AI API Key
               <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>
             </label>
             <input
               type="password"
-              value={tripoApiKey}
-              onChange={(e) => setTripoApiKey(e.target.value)}
-              placeholder="Enter your Tripo AI API key..."
+              value={stabilityApiKey}
+              onChange={(e) => setStabilityApiKey(e.target.value)}
+              placeholder="Enter your Stability AI API key..."
               disabled={isSaving}
               style={{
                 width: '100%',
@@ -211,7 +211,7 @@ export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModal
               }}
             />
             <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px', margin: '6px 0 0 0' }}>
-              Get your key from <a href="https://www.tripo3d.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '600' }}>tripo3d.ai</a>
+              Get your key from <a href="https://platform.stability.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: '600' }}>platform.stability.ai</a>
             </p>
           </div>
 
@@ -288,7 +288,7 @@ export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModal
           </button>
           <button
             onClick={handleSave}
-            disabled={isSaving || !groqApiKey.trim() || !tripoApiKey.trim()}
+            disabled={isSaving || !groqApiKey.trim() || !stabilityApiKey.trim()}
             style={{
               padding: '10px 16px',
               background: '#2563eb',
@@ -297,8 +297,8 @@ export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModal
               fontSize: '14px',
               fontWeight: '600',
               color: 'white',
-              cursor: isSaving || !groqApiKey.trim() || !tripoApiKey.trim() ? 'not-allowed' : 'pointer',
-              opacity: isSaving || !groqApiKey.trim() || !tripoApiKey.trim() ? 0.6 : 1,
+              cursor: isSaving || !groqApiKey.trim() || !stabilityApiKey.trim() ? 'not-allowed' : 'pointer',
+              opacity: isSaving || !groqApiKey.trim() || !stabilityApiKey.trim() ? 0.6 : 1,
               transition: 'background-color 0.3s',
             }}
           >

@@ -57,7 +57,7 @@ async def health():
 class ApiKeyRequest(BaseModel):
     user_id: str
     groq_api_key: str
-    tripo_api_key: str
+    stability_api_key: str
 
 @app.post("/config/api-keys")
 async def save_api_keys(req: ApiKeyRequest):

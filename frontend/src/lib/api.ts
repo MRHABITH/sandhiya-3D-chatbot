@@ -51,7 +51,7 @@ export async function sendMessage(message: string, sessionId: string, enable3d: 
     return response.json();
 }
 
-export async function saveApiKeys(groqApiKey: string, tripoApiKey: string, userId: string = 'user-1'): Promise<ApiKeysResponse> {
+export async function saveApiKeys(groqApiKey: string, stabilityApiKey: string, userId: string = 'user-1'): Promise<ApiKeysResponse> {
     console.log(`Attempting to save API keys to: ${API_BASE_URL}/config/api-keys`);
     const response = await fetch(`${API_BASE_URL}/config/api-keys`, {
         method: 'POST',
@@ -63,7 +63,7 @@ export async function saveApiKeys(groqApiKey: string, tripoApiKey: string, userI
         body: JSON.stringify({
             user_id: userId,
             groq_api_key: groqApiKey,
-            tripo_api_key: tripoApiKey,
+            stability_api_key: stabilityApiKey,
         }),
     });
 

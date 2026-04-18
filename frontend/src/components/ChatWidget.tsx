@@ -86,9 +86,9 @@ export default function ChatWidget({ onExpandScene }: ChatWidgetProps) {
     }
   };
 
-  const handleSaveApiKeys = async (groqKey: string, tripoKey: string) => {
+  const handleSaveApiKeys = async (groqKey: string, stabilityKey: string) => {
     try {
-      const response = await saveApiKeys(groqKey, tripoKey, 'user-1');
+      const response = await saveApiKeys(groqKey, stabilityKey, 'user-1');
       if (!response.success) {
         throw new Error(response.message || 'Failed to save API keys');
       }
