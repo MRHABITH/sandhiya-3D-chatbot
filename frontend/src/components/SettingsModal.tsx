@@ -6,7 +6,7 @@ interface SettingsModalProps {
   onClose: () => void;
   onSave: (groqKey: string, stabilityKey: string) => Promise<void>;
 }
-
+  
 export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
   const [groqApiKey, setGroqApiKey] = useState(() => {
     return localStorage.getItem('groq_api_key') || '';
