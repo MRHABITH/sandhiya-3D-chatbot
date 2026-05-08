@@ -21,7 +21,7 @@ export default function SettingsModal({ isOpen, onClose, onSave }: SettingsModal
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleSave = async () => {
-    if (!groqApiKey.trim() || !tripoApiKey.trim()) {
+    if (!groqApiKey.trim() || !stabilityApiKey.trim()) {
       setErrorMessage('Both API keys are required');
       setSaveStatus('error');
       return;
